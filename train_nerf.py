@@ -15,25 +15,7 @@ from nerf import (CfgNode, get_embedding_function, get_ray_bundle, img2mse,
                   mse2psnr, run_one_iter_of_nerf)
 
 
-def main():
-
-    parser = argparse.ArgumentParser()
-    parser.add_argument(
-        "--config", type=str, required=True, help="Path to (.yml) config file."
-    )
-    parser.add_argument(
-        "--load-checkpoint",
-        type=str,
-        default="",
-        help="Path to load saved checkpoint from.",
-    )
-    configargs = parser.parse_args()
-
-    # Read config file.
-    cfg = None
-    with open(configargs.config, "r") as f:
-        cfg_dict = yaml.load(f, Loader=yaml.FullLoader)
-        cfg = CfgNode(cfg_dict)
+def main(cfg, configargs):
 
     # # (Optional:) enable this to track autograd issues when debugging
     # torch.autograd.set_detect_anomaly(True)
@@ -168,7 +150,7 @@ def main():
 
         model_coarse.train()
         if model_fine:
-            model_coarse.train()
+            model_fine.train()
 
         rgb_coarse, rgb_fine = None, None
         target_ray_values = None
@@ -292,7 +274,7 @@ def main():
             tqdm.write("[VAL] =======> Iter: " + str(i))
             model_coarse.eval()
             if model_fine:
-                model_coarse.eval()
+                model_fine.eval()
 
             start = time.time()
             with torch.no_grad():
@@ -401,4 +383,22 @@ def cast_to_image(tensor):
 
 
 if __name__ == "__main__":
-    main()
+    parser = argparse.ArgumentParser()
+    parser.add_argument(
+        "--config", type=str, required=True, help="Path to (.yml) config file."
+    )
+    parser.add_argument(
+        "--load-checkpoint",
+        type=str,
+        default="",
+        help="Path to load saved checkpoint from.",
+    )
+    configargs = parser.parse_args()
+
+    # Read config file.
+    cfg = None
+    with open(configargs.config, "r") as f:
+        cfg_dict = yaml.load(f, Loader=yaml.FullLoader)
+        cfg = CfgNode(cfg_dict)
+
+    main(cfg, configargs)
