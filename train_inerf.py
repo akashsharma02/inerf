@@ -311,14 +311,15 @@ def main(cfg, configargs):
                     )
 
                 rgb = rgb_fine if rgb_fine is not None else rgb_coarse
+                os.makedirs(os.path.join(configargs.savedir, f"{i}"), exist_ok=True)
                 if configargs.save_disparity_image:
                     disp = disp_fine if disp_fine is not None else disp_coarse
                 if configargs.savedir:
-                    savefile = os.path.join(configargs.savedir, f"{j:04d}.png")
+                    savefile = os.path.join(configargs.savedir, f"{i}", f"{j:04d}.png")
                     imageio.imwrite(savefile, np.moveaxis(cast_to_image(rgb[..., :3]), [0], [-1]))
                     writer.add_image(f"RGB {i}", cast_to_image(rgb[..., :3]), j)
                 if configargs.save_disparity_image:
-                    savefile = os.path.join(configargs.savedir, "disparity", f"{j:04d}.png")
+                    savefile = os.path.join(configargs.savedir, f"{i}", "disparity", f"{j:04d}.png")
                     imageio.imwrite(savefile, np.squeeze(cast_to_disparity_image(disp)))
                     writer.add_image(f"Disparity {i}", cast_to_disparity_image(disp), j)
             if (torch.allclose(tform_cam2ref, torch.eye(4).to(device))):
