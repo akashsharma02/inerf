@@ -17,6 +17,7 @@ def volume_render_radiance_field(
     dists = torch.cat(
         (
             depth_values[..., 1:] - depth_values[..., :-1],
+            # I don't understand the purpose of concatenating one_e_10 to the vector to compute distance between samples
             one_e_10.expand(depth_values[..., :1].shape),
         ),
         dim=-1,

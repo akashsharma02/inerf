@@ -15,25 +15,7 @@ from nerf import (CfgNode, get_embedding_function, get_ray_bundle, img2mse,
                   mse2psnr, run_one_iter_of_nerf)
 
 
-def main():
-
-    parser = argparse.ArgumentParser()
-    parser.add_argument(
-        "--config", type=str, required=True, help="Path to (.yml) config file."
-    )
-    parser.add_argument(
-        "--load-checkpoint",
-        type=str,
-        default="",
-        help="Path to load saved checkpoint from.",
-    )
-    configargs = parser.parse_args()
-
-    # Read config file.
-    cfg = None
-    with open(configargs.config, "r") as f:
-        cfg_dict = yaml.load(f, Loader=yaml.FullLoader)
-        cfg = CfgNode(cfg_dict)
+def main(cfg, configargs):
 
     # # (Optional:) enable this to track autograd issues when debugging
     # torch.autograd.set_detect_anomaly(True)
@@ -168,7 +150,7 @@ def main():
 
         model_coarse.train()
         if model_fine:
-            model_coarse.train()
+            model_fine.train()
 
         rgb_coarse, rgb_fine = None, None
         target_ray_values = None
@@ -249,12 +231,7 @@ def main():
             fine_loss = torch.nn.functional.mse_loss(
                 rgb_fine[..., :3], target_ray_values[..., :3]
             )
-        # loss = torch.nn.functional.mse_loss(rgb_pred[..., :3], target_s[..., :3])
         loss = 0.0
-        # if fine_loss is not None:
-        #     loss = fine_loss
-        # else:
-        #     loss = coarse_loss
         loss = coarse_loss + (fine_loss if fine_loss is not None else 0.0)
         loss.backward()
         psnr = mse2psnr(loss.item())
@@ -292,7 +269,7 @@ def main():
             tqdm.write("[VAL] =======> Iter: " + str(i))
             model_coarse.eval()
             if model_fine:
-                model_coarse.eval()
+                model_fine.eval()
 
             start = time.time()
             with torch.no_grad():
@@ -401,4 +378,22 @@ def cast_to_image(tensor):
 
 
 if __name__ == "__main__":
-    main()
+    parser = argparse.ArgumentParser()
+    parser.add_argument(
+        "--config", type=str, required=True, help="Path to (.yml) config file."
+    )
+    parser.add_argument(
+        "--load-checkpoint",
+        type=str,
+        default="",
+        help="Path to load saved checkpoint from.",
+    )
+    configargs = parser.parse_args()
+
+    # Read config file.
+    cfg = None
+    with open(configargs.config, "r") as f:
+        cfg_dict = yaml.load(f, Loader=yaml.FullLoader)
+        cfg = CfgNode(cfg_dict)
+
+    main(cfg, configargs)
