@@ -1,23 +1,21 @@
-# nerf-pytorch
+# inerf
 #### A PyTorch re-implementation
-### [Project](http://tancik.com/nerf) | [Video](https://youtu.be/JuH79E8rdKc) | [Paper](https://arxiv.org/abs/2003.08934)
+### [Project](https://yenchenlin.me/inerf/) | [Video](https://www.youtube.com/watch?v=eQuCZaQN0tI) | [Paper](https://arxiv.org/abs/2012.05877)
 
-[![Open Tiny-NeRF in Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/drive/1rO8xo0TemN67d4mTpakrKrLp03b9bgCX)
-
-[NeRF: Representing Scenes as Neural Radiance Fields for View Synthesis](http://tancik.com/nerf)  
- [Ben Mildenhall](https://people.eecs.berkeley.edu/~bmild/)\*<sup>1</sup>,
- [Pratul P. Srinivasan](https://people.eecs.berkeley.edu/~pratul/)\*<sup>1</sup>,
- [Matthew Tancik](http://tancik.com/)\*<sup>1</sup>,
- [Jonathan T. Barron](http://jonbarron.info/)<sup>2</sup>,
- [Ravi Ramamoorthi](http://cseweb.ucsd.edu/~ravir/)<sup>3</sup>,
- [Ren Ng](https://www2.eecs.berkeley.edu/Faculty/Homepages/yirenng.html)<sup>1</sup> <br>
- <sup>1</sup>UC Berkeley, <sup>2</sup>Google Research, <sup>3</sup>UC San Diego  
-  \*denotes equal contribution
+[iNeRF: Inverting Neural Radiance Fields for Pose Estimation](https://yenchenlin.me/inerf/)  
+ [Lin Yen-Chen](https://yenchenlin.me/)\*<sup>1,2</sup>,
+ [Pete Florence](http://www.peteflorence.com/)\*<sup>1</sup>,
+ [Jonathan T. Barron](http://jonbarron.info/)<sup>1</sup>,
+ [Alberto Rodriguez](https://meche.mit.edu/people/faculty/ALBERTOR@MIT.EDU)<sup>2</sup>,
+ [Phillip Isola](http://web.mit.edu/phillipi/)<sup>2</sup>,
+ [Tsung-Yi Lin](https://scholar.google.com/citations?user=_BPdgV0AAAAJ&hl=en)<sup>1</sup><br>
+ <sup>1</sup>Google, <sup>2</sup>MIT<sup>3</sup>
 
 <p align="center">
     <img src="assets/pipeline.jpg"/>
 </p>
 
+## A work in Progress
 A PyTorch re-implementation of [Neural Radiance Fields](http://tancik.com/nerf).
 
 ## Speed matters!
@@ -167,5 +165,5 @@ Feel free to raise GitHub issues if you find anything concerning. Pull requests 
 `nerf-pytorch` is available under the [MIT License](https://opensource.org/licenses/MIT). For more details see: [LICENSE](LICENSE) and [ACKNOWLEDGEMENTS](ACKNOWLEDGEMENTS).
 
 ## Misc
+A shoutout to [Krishna Murty](https://krrish94.github.io/) for his awesome scalable PyTorch implementation, which this code base is pretty much entirely based on.
 
-Also, a shoutout to [yenchenlin](https://github.com/yenchenlin) for his cool PyTorch [implementation](https://github.com/yenchenlin/nerf-pytorch), whose volume rendering function replaced mine (my initial impl was inefficient in comparison).
