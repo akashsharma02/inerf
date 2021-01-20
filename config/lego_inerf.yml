@@ -1,16 +1,16 @@
 # Parameters to setup experiment.
 experiment:
   # Unique experiment identifier
-  id: lego-lowres3-inerf-jan20
+  id: lego-lowres3-inerf-jan20-test2
   # Experiment logs will be stored at "logdir"/"id"
   logdir: logs
   # Seed for random number generators (for repeatability).
   randomseed: 42  # Cause, why not?
   # Number of training iterations.
-  train_iters: 200
+  train_iters: 500
   convergence_criteria: 1e-6
   # Number of training iterations after which to validate.
-  validate_every: 10
+  validate_every: 5
   # Number of training iterations after which to checkpoint.
   save_every: 5000
   # Number of training iterations after which to print progress.

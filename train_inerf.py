@@ -168,7 +168,6 @@ def main(cfg, configargs):
     times_per_image = []
     for i, cam_pose in enumerate(tqdm(render_poses)):
         start = time.time()
-
         ref_pose = ref_poses[i, :]
         tform_cam2ref = torch.matmul(torch.inverse(ref_pose), cam_pose)
         rgb = None, None
@@ -203,6 +202,13 @@ def main(cfg, configargs):
             )
         writer.add_image(f"Reference RGB {i}", cast_to_image(ref_rgb_fine[..., :3]))
         writer.add_image(f"Reference disparity {i}", cast_to_disparity_image(ref_disp_fine))
+
+        os.makedirs(os.path.join(configargs.savedir, f"{i}"), exist_ok=True)
+        savefile = os.path.join(configargs.savedir, f"{i}", "color_ref.png")
+        imageio.imwrite(savefile, np.moveaxis(cast_to_image(ref_rgb_fine[..., :3]), [0], [-1]))
+        if configargs.save_disparity_image:
+            savefile = os.path.join(configargs.savedir, f"{i}", "disparity_ref.png")
+            imageio.imwrite(savefile, np.squeeze(cast_to_disparity_image(disp)))
 
         model_coarse.train()
         if model_fine:
@@ -255,11 +261,6 @@ def main(cfg, configargs):
             loss = coarse_loss + (fine_loss if fine_loss is not None else 0.0)
             loss.backward()
 
-            gradient_params = [("delta", delta_pose)]
-            gradient_params += model_coarse.named_parameters()
-            if model_fine:
-                gradient_params += model_fine.named_parameters()
-            plot_grad_flow(gradient_params)
             # 6. Metrics
             psnr = mse2psnr(loss.item())
             tform_cam2ref = torch.matmul(torch.inverse(ref_pose), cam_pose)
@@ -285,11 +286,10 @@ def main(cfg, configargs):
             if rgb_fine is not None:
                 writer.add_scalar(f"train_{i}/fine_loss", fine_loss.item(), j)
             if j % cfg.experiment.print_every == 0 or j == cfg.experiment.train_iters - 1:
-                tqdm.write(f"[TRAIN] Iter: {j} Loss: {loss.item()} PSNR: {psnr}")
-                tqdm.write(f"Current relative pose at iteration {j}: \n {tform_cam2ref} \n {delta_pose}")
+                tqdm.write(f"[TRAIN] Iter: {j} Loss: {loss.item()} PSNR: {psnr} Pose error: {pose_error}")
 
-            times_per_image.append(time.time() - start)
 
+            # Only save the images on validation for visualization
             if j % cfg.experiment.validate_every == 0 or j == cfg.experiment.train_iters - 1:
                 tqdm.write("[VAL] =======> Iter: " + str(j))
                 model_coarse.eval()
@@ -311,20 +311,20 @@ def main(cfg, configargs):
                     )
 
                 rgb = rgb_fine if rgb_fine is not None else rgb_coarse
-                os.makedirs(os.path.join(configargs.savedir, f"{i}"), exist_ok=True)
-                if configargs.save_disparity_image:
-                    disp = disp_fine if disp_fine is not None else disp_coarse
                 if configargs.savedir:
                     savefile = os.path.join(configargs.savedir, f"{i}", f"{j:04d}.png")
                     imageio.imwrite(savefile, np.moveaxis(cast_to_image(rgb[..., :3]), [0], [-1]))
                     writer.add_image(f"RGB {i}", cast_to_image(rgb[..., :3]), j)
+
                 if configargs.save_disparity_image:
+                    disp = disp_fine if disp_fine is not None else disp_coarse
                     savefile = os.path.join(configargs.savedir, f"{i}", "disparity", f"{j:04d}.png")
                     imageio.imwrite(savefile, np.squeeze(cast_to_disparity_image(disp)))
                     writer.add_image(f"Disparity {i}", cast_to_disparity_image(disp), j)
-            if (torch.allclose(tform_cam2ref, torch.eye(4).to(device))):
+            if (pose_error < 5e-3):
                 break
 
+        times_per_image.append(time.time() - start)
         savefileplt = os.path.join(configargs.savedir, f"gradient_flow{i:04d}.png")
         plt.savefig(savefileplt)
         tqdm.write(f"Avg time per image: {sum(times_per_image) / (i + 1)}")
