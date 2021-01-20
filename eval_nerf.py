@@ -36,31 +36,7 @@ def cast_to_disparity_image(tensor):
     return img.detach().cpu().numpy().astype(np.uint8)
 
 
-def main():
-
-    parser = argparse.ArgumentParser()
-    parser.add_argument(
-        "--config", type=str, required=True, help="Path to (.yml) config file."
-    )
-    parser.add_argument(
-        "--checkpoint",
-        type=str,
-        required=True,
-        help="Checkpoint / pre-trained model to evaluate.",
-    )
-    parser.add_argument(
-        "--savedir", type=str, help="Save images to this directory, if specified."
-    )
-    parser.add_argument(
-        "--save-disparity-image", action="store_true", help="Save disparity images too."
-    )
-    configargs = parser.parse_args()
-
-    # Read config file.
-    cfg = None
-    with open(configargs.config, "r") as f:
-        cfg_dict = yaml.load(f, Loader=yaml.FullLoader)
-        cfg = CfgNode(cfg_dict)
+def main(cfg, configargs):
 
     images, poses, render_poses, hwf = None, None, None, None
     i_train, i_val, i_test = None, None, None
@@ -191,4 +167,28 @@ def main():
 
 
 if __name__ == "__main__":
-    main()
+    parser = argparse.ArgumentParser()
+    parser.add_argument(
+        "--config", type=str, required=True, help="Path to (.yml) config file."
+    )
+    parser.add_argument(
+        "--checkpoint",
+        type=str,
+        required=True,
+        help="Checkpoint / pre-trained model to evaluate.",
+    )
+    parser.add_argument(
+        "--savedir", type=str, help="Save images to this directory, if specified."
+    )
+    parser.add_argument(
+        "--save-disparity-image", action="store_true", help="Save disparity images too."
+    )
+    configargs = parser.parse_args()
+
+    # Read config file.
+    cfg = None
+    with open(configargs.config, "r") as f:
+        cfg_dict = yaml.load(f, Loader=yaml.FullLoader)
+        cfg = CfgNode(cfg_dict)
+
+    main(cfg, configargs)

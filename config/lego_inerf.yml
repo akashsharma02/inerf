@@ -1,20 +1,20 @@
 # Parameters to setup experiment.
 experiment:
   # Unique experiment identifier
-  id: lego-lowres3
+  id: lego-lowres3-inerf-jan20
   # Experiment logs will be stored at "logdir"/"id"
   logdir: logs
   # Seed for random number generators (for repeatability).
   randomseed: 42  # Cause, why not?
   # Number of training iterations.
-  train_iters: 200000
-  convergence_lr: 1e-7
+  train_iters: 200
+  convergence_criteria: 1e-6
   # Number of training iterations after which to validate.
-  validate_every: 100
+  validate_every: 10
   # Number of training iterations after which to checkpoint.
   save_every: 5000
   # Number of training iterations after which to print progress.
-  print_every: 100
+  print_every: 10
 
 # Dataset parameters.
 dataset:
@@ -108,14 +108,14 @@ optimizer:
   # Name of the torch.optim class used for optimization.
   type: Adam
   # Learning rate.
-  lr: 5.0E-3
+  lr: 0.01
 
 # Learning rate schedule.
 scheduler:
   # Exponentially decay learning rate (in 1000 steps)
-  lr_decay: 250
+  lr_decay: 100
   # Rate at which to apply this decay.
-  lr_decay_factor: 0.1
+  lr_decay_factor: 0.8
 
 # NeRF parameters.
 nerf:
@@ -129,7 +129,7 @@ nerf:
   train:
     # Number of random rays to retain from each image.
     # These sampled rays are used for training, and the others are discarded.
-    num_random_rays: 1024  # 32 * 32 * 4
+    num_random_rays: 2048  # 32 * 32 * 4
     # Size of each chunk (rays are batched into "chunks" and passed through
     # the network)
     chunksize: 131072  # 131072  # 1024 * 32
@@ -164,3 +164,4 @@ nerf:
     radiance_field_noise_std: 0.
     # Sample linearly in disparity space, as opposed to in depth space.
     lindisp: False
+

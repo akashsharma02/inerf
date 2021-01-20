@@ -1,10 +1,12 @@
 import json
 import os
+import math
 
 import cv2
 import imageio
 import numpy as np
 import torch
+from lieutils import SE3
 
 
 def translate_by_t_along_z(t):
@@ -78,7 +80,7 @@ def load_blender_data(basedir, half_res=False, testskip=1, debug=False):
     render_poses = torch.stack(
         [
             torch.from_numpy(pose_spherical(angle, -30.0, 4.0))
-            for angle in np.linspace(-180, 180, 40 + 1)[:-1]
+            for angle in np.linspace(180, -180, 40 + 1)[:-1]
         ],
         0,
     )
@@ -114,3 +116,89 @@ def load_blender_data(basedir, half_res=False, testskip=1, debug=False):
     poses = torch.from_numpy(poses)
 
     return imgs, poses, render_poses, [H, W, focal], i_split
+
+def load_blender_data_inerf(basedir, half_res=False, testskip=1, debug=False):
+    splits = ["train", "val", "test"]
+    metas = {}
+    for s in splits:
+        with open(os.path.join(basedir, f"transforms_{s}.json"), "r") as fp:
+            metas[s] = json.load(fp)
+
+    all_imgs = []
+    all_poses = []
+    counts = [0]
+    for s in splits:
+        meta = metas[s]
+        imgs = []
+        poses = []
+        if s == "train" or testskip == 0:
+            skip = 1
+        else:
+            skip = testskip
+
+        for frame in meta["frames"][::skip]:
+            fname = os.path.join(basedir, frame["file_path"] + ".png")
+            imgs.append(imageio.imread(fname))
+            poses.append(np.array(frame["transform_matrix"]))
+        imgs = (np.array(imgs) / 255.0).astype(np.float32)
+        poses = np.array(poses).astype(np.float32)
+        counts.append(counts[-1] + imgs.shape[0])
+        all_imgs.append(imgs)
+        all_poses.append(poses)
+
+    i_split = [np.arange(counts[i], counts[i + 1]) for i in range(3)]
+
+    imgs = np.concatenate(all_imgs, 0)
+    poses = np.concatenate(all_poses, 0)
+
+    H, W = imgs[0].shape[:2]
+    camera_angle_x = float(meta["camera_angle_x"])
+    focal = 0.5 * W / np.tan(0.5 * camera_angle_x)
+
+    render_ref_poses = [
+            torch.from_numpy(pose_spherical(angle, -30.0, 4.0))
+            for angle in np.linspace(180, -180, 40 + 1)[:-1]
+        ]
+
+    render_poses = []
+    rad = (-40 / 180.0 * np.pi, 40 / 180.0 * np.pi)
+    for _, ref_pose in enumerate(render_ref_poses):
+        # Choose between three axis randomly
+        rand_axis, rand_rot, rand_trans = np.random.choice([0, 1, 2]), np.random.uniform(rad[0], rad[1]), np.random.uniform(-0.2, 0.2, 3)
+        rotation_axis = np.zeros(6)
+        rotation_axis[rand_axis], rotation_axis[3:] = rand_rot, rand_trans
+        render_poses.append(torch.matmul(SE3.Exp(torch.from_numpy(rotation_axis)), ref_pose))
+
+    render_poses = torch.stack(render_poses)
+    render_ref_poses = torch.stack(render_ref_poses)
+    # In debug mode, return extremely tiny images
+    if debug:
+        H = H // 32
+        W = W // 32
+        focal = focal / 32.0
+        imgs = [
+            torch.from_numpy(
+                cv2.resize(imgs[i], dsize=(25, 25), interpolation=cv2.INTER_AREA)
+            )
+            for i in range(imgs.shape[0])
+        ]
+        imgs = torch.stack(imgs, 0)
+        poses = torch.from_numpy(poses)
+        return imgs, poses, render_poses, [H, W, focal], i_split
+
+    if half_res:
+        # TODO: resize images using INTER_AREA (cv2)
+        H = H // 2
+        W = W // 2
+        focal = focal / 2.0
+        imgs = [
+            torch.from_numpy(
+                cv2.resize(imgs[i], dsize=(400, 400), interpolation=cv2.INTER_AREA)
+            )
+            for i in range(imgs.shape[0])
+        ]
+        imgs = torch.stack(imgs, 0)
+
+    poses = torch.from_numpy(poses)
+
+    return imgs, render_ref_poses, render_poses, [H, W, focal], i_split
